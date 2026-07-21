@@ -1,0 +1,41 @@
+{
+  "spriteVersionNumber": 2,
+  "v2": {
+    "file": "spritesheet.png",
+    "size": [
+      1536,
+      2288
+    ],
+    "grid": [
+      8,
+      11
+    ]
+  },
+  "v1": {
+    "file": "spritesheet-v1.png",
+    "size": [
+      1536,
+      1872
+    ],
+    "grid": [
+      8,
+      9
+    ]
+  },
+  "cell": [
+    192,
+    208
+  ],
+  "actions": [
+    "idle",
+    "running-right",
+    "running-left",
+    "waving",
+    "jumping",
+    "failed",
+    "waiting",
+    "working",
+    "review",
+    "look-directions"
+  ]
+}
