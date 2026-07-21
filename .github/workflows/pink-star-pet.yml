@@ -6,6 +6,7 @@ on:
       - feat/pink-star-codex-pet
     paths:
       - codex-pets/pink-star/generate.py
+      - .github/workflows/pink-star-pet.yml
   workflow_dispatch:
 
 permissions:
