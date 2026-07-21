@@ -4,9 +4,16 @@ on:
   push:
     branches:
       - feat/pink-star-codex-pet
+      - main
     paths:
       - codex-pets/pink-star/generate.py
       - codex-pets/pink-star/source/**
+      - .github/workflows/pink-star-pet.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - codex-pets/pink-star/**
       - .github/workflows/pink-star-pet.yml
   workflow_dispatch:
 
@@ -17,8 +24,10 @@ jobs:
   build-pet:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,5 +65,5 @@ jobs:
             echo "Generated assets are already up to date."
           else
             git commit -m "build(pet): 生成 Pink Star Codex 动作包"
-            git push
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
