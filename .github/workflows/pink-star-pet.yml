@@ -1,34 +1,24 @@
-name: Build Pink Star Codex Pet
+name: Debug Pink Star Codex Pet
 
 on:
   push:
     branches:
       - feat/pink-star-codex-pet
-      - main
     paths:
-      - codex-pets/pink-star/assets-base64/READY
+      - codex-pets/pink-star/generate.py
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-pet:
+  debug-generator:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source branch
+      - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
-
-      - name: Restore PNG action sheets
-        run: |
-          cat codex-pets/pink-star/assets-base64/v2/part-*.b64 \
-            | base64 --decode \
-            > codex-pets/pink-star/spritesheet.png
-          cat codex-pets/pink-star/assets-base64/v1/part-*.b64 \
-            | base64 --decode \
-            > codex-pets/pink-star/spritesheet-v1.png
+          ref: feat/pink-star-codex-pet
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -38,31 +28,19 @@ jobs:
       - name: Install Pillow
         run: python -m pip install --disable-pip-version-check pillow
 
-      - name: Validate dimensions and transparency
+      - name: Capture generator output
         run: |
-          python - <<'PY'
-          from PIL import Image
-          from pathlib import Path
+          set +e
+          python codex-pets/pink-star/generate.py > codex-pets/pink-star/build.log 2>&1
+          status=$?
+          echo "exit_code=$status" >> codex-pets/pink-star/build.log
+          cat codex-pets/pink-star/build.log
+          exit 0
 
-          root = Path("codex-pets/pink-star")
-          v2 = Image.open(root / "spritesheet.png").convert("RGBA")
-          v1 = Image.open(root / "spritesheet-v1.png").convert("RGBA")
-          assert v2.size == (1536, 2288), v2.size
-          assert v1.size == (1536, 1872), v1.size
-          assert v2.getpixel((0, 0))[3] == 0
-          assert v1.getpixel((0, 0))[3] == 0
-          print("Pink Star action sheets passed validation")
-          PY
-
-      - name: Commit restored assets
+      - name: Commit diagnostic log
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add codex-pets/pink-star/spritesheet.png \
-                  codex-pets/pink-star/spritesheet-v1.png
-          if git diff --cached --quiet; then
-            echo "Action sheets are already up to date."
-          else
-            git commit -m "build(pet): 添加 Pink Star Codex 动作图集"
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          git add codex-pets/pink-star/build.log
+          git commit -m "chore(pet): 记录 Pink Star 生成器诊断" || true
+          git push origin HEAD:feat/pink-star-codex-pet
