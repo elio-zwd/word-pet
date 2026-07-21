@@ -19,7 +19,7 @@ jobs:
       - name: Checkout source branch
         uses: actions/checkout@v4
         with:
-          ref: feat/pink-star-codex-pet
+          ref: ${{ github.head_ref || 'feat/pink-star-codex-pet' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,5 +61,5 @@ jobs:
             echo "Generated assets are already up to date."
           else
             git commit -m "build(pet): 生成 Pink Star Codex 动作包"
-            git push origin HEAD:feat/pink-star-codex-pet
+            git push origin HEAD:${{ github.head_ref || 'feat/pink-star-codex-pet' }}
           fi
