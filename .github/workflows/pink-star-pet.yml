@@ -6,15 +6,7 @@ on:
       - feat/pink-star-codex-pet
       - main
     paths:
-      - codex-pets/pink-star/generate.py
-      - codex-pets/pink-star/source/**
-      - .github/workflows/pink-star-pet.yml
-  pull_request:
-    branches:
-      - main
-    paths:
-      - codex-pets/pink-star/**
-      - .github/workflows/pink-star-pet.yml
+      - codex-pets/pink-star/assets-base64/READY
   workflow_dispatch:
 
 permissions:
@@ -27,7 +19,16 @@ jobs:
       - name: Checkout source branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ github.ref_name }}
+
+      - name: Restore PNG action sheets
+        run: |
+          cat codex-pets/pink-star/assets-base64/v2/part-*.b64 \
+            | base64 --decode \
+            > codex-pets/pink-star/spritesheet.png
+          cat codex-pets/pink-star/assets-base64/v1/part-*.b64 \
+            | base64 --decode \
+            > codex-pets/pink-star/spritesheet-v1.png
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,33 +38,31 @@ jobs:
       - name: Install Pillow
         run: python -m pip install --disable-pip-version-check pillow
 
-      - name: Generate action pack
-        run: python codex-pets/pink-star/generate.py
-
-      - name: Validate dimensions
+      - name: Validate dimensions and transparency
         run: |
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
 
           root = Path("codex-pets/pink-star")
-          assert Image.open(root / "spritesheet.webp").size == (1536, 2288)
-          assert Image.open(root / "spritesheet-v1.png").size == (1536, 1872)
-          assert len(list((root / "actions").glob("*.gif"))) == 10
-          print("Pink Star action pack validation passed")
+          v2 = Image.open(root / "spritesheet.png").convert("RGBA")
+          v1 = Image.open(root / "spritesheet-v1.png").convert("RGBA")
+          assert v2.size == (1536, 2288), v2.size
+          assert v1.size == (1536, 1872), v1.size
+          assert v2.getpixel((0, 0))[3] == 0
+          assert v1.getpixel((0, 0))[3] == 0
+          print("Pink Star action sheets passed validation")
           PY
 
-      - name: Commit generated assets
+      - name: Commit restored assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add codex-pets/pink-star/spritesheet.webp \
-                  codex-pets/pink-star/spritesheet-v1.png \
-                  codex-pets/pink-star/actions \
-                  codex-pets/pink-star/validation.json
+          git add codex-pets/pink-star/spritesheet.png \
+                  codex-pets/pink-star/spritesheet-v1.png
           if git diff --cached --quiet; then
-            echo "Generated assets are already up to date."
+            echo "Action sheets are already up to date."
           else
-            git commit -m "build(pet): 生成 Pink Star Codex 动作包"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+            git commit -m "build(pet): 添加 Pink Star Codex 动作图集"
+            git push origin HEAD:${{ github.ref_name }}
           fi
