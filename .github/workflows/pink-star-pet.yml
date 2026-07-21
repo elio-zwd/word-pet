@@ -1,9 +1,9 @@
 name: Debug Pink Star Codex Pet
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/pink-star-codex-pet
+      - main
     paths:
       - codex-pets/pink-star/generate.py
       - .github/workflows/pink-star-pet.yml
