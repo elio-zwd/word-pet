@@ -1,0 +1,60 @@
+name: Build Pink Star Codex Pet
+
+on:
+  push:
+    branches:
+      - feat/pink-star-codex-pet
+    paths:
+      - codex-pets/pink-star/generate.py
+      - codex-pets/pink-star/source/**
+      - .github/workflows/pink-star-pet.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-pet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Generate action pack
+        run: python codex-pets/pink-star/generate.py
+
+      - name: Validate dimensions
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+
+          root = Path("codex-pets/pink-star")
+          assert Image.open(root / "spritesheet.webp").size == (1536, 2288)
+          assert Image.open(root / "spritesheet-v1.png").size == (1536, 1872)
+          assert len(list((root / "actions").glob("*.gif"))) == 10
+          print("Pink Star action pack validation passed")
+          PY
+
+      - name: Commit generated assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add codex-pets/pink-star/spritesheet.webp \
+                  codex-pets/pink-star/spritesheet-v1.png \
+                  codex-pets/pink-star/actions \
+                  codex-pets/pink-star/validation.json
+          if git diff --cached --quiet; then
+            echo "Generated assets are already up to date."
+          else
+            git commit -m "build(pet): 生成 Pink Star Codex 动作包"
+            git push
+          fi
